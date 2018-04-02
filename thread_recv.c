@@ -77,6 +77,9 @@ void * recv_thread_1(void *arg){
                 VIEWLIST;
                 printf(INFO"msg is ack,"NONE ACTION" Deleted Corresponding message in list_tosend_head\n"NONE);
                 list_del(pos); // 注意,删除链表,是删除的list_head,还需要删除 外层的数据 ,删除一个节点之后,并没有破坏这个节点和外围数据的位置关系
+                //这里需要判断是什么ack ,因为ack 分为两种,一种是send 的ack
+                //一种是 得到数据的ack.
+                //得到 第一种ack 不能删,得到第二种ack 可以删. 
                 free(tmp_xxx_node2);//释放数据
                 VIEWLIST;
                 printf("\n\n");
