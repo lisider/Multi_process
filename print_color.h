@@ -29,8 +29,17 @@
 #define CLRLINE              "\r\e[K" //or "\e[1K\r"
 
 //黄色表示动作
+#define ACTION YELLOW
 //红色表示错误
 
+#define ERROR RED
+
+#define INFO GREEN
+
+
+#define WARN L_RED
+
+#define TODO BLINK
 
 
 #endif 

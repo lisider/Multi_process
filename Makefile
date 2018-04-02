@@ -1,6 +1,6 @@
 all:process
 
-process: process_sample.c
-	gcc process_sample.c  read_write_state_api.c -o process -pthread
+process: process.c
+	gcc process.c  read_write_state_api.c  shm.c function.c thread_recv.c -o main -pthread -g
 clean:
-	rm process
+	rm main -rf
