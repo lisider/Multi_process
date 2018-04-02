@@ -22,6 +22,9 @@
 #include <string.h>
 #include "list.h"
 #include "common.h"
+#include "shm.h"
+#include <pthread.h>
+#include "function.h"
 
 
 
@@ -160,7 +163,7 @@ int main(int argc,char ** argv){
 
     while(1){
 
-        printf("\n\n\n");
+        printf("\n\n\n\n\n\n");
         // 包,发送 ,发送给 AUDIO的包
         bzero(&data,sizeof(data));
         strcpy((char *)&(data.context),"JSON package");
@@ -179,7 +182,7 @@ int main(int argc,char ** argv){
         }
 
         data.pid_to = findpidbyname(AUDIO);
-        printf(INFO"%s is  on-line\n"NONE,whoami(AUDIO));
+        printf(INFO"%s is  on-line\n\n\n"NONE,whoami(AUDIO));
 
         ret = pkt_send(&data,sizeof(data));
         if( ret < 0 ){
@@ -188,7 +191,6 @@ int main(int argc,char ** argv){
 
         for(i = 0;i<30000;i++)
             for(j = 0; j < 10000;j++);
-        printf("\n\n\n");
     }
 
     return 0;

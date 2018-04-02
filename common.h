@@ -11,8 +11,8 @@
 
 
 #include "list.h"
-       #include <sys/types.h>
-       #include <unistd.h>
+#include <sys/types.h>
+#include <unistd.h>
 
 /**************************************************************************************
  * 宏定义区
@@ -62,7 +62,7 @@ typedef struct{
     call_back_fun_t callback_passive; //websocket 特有的
     init_t  init;
     void (*todel)(list_xxx_t* list_todel_head);
-    void (*waitfor)(data_t *data)
+    void (*waitfor)(data_t *data);
 }msg_del_method_t;
 
 typedef struct {

@@ -23,6 +23,9 @@
 #include <string.h>
 #include "list.h"
 #include "common.h"
+#include "shm.h"
+#include <pthread.h>
+#include "read_write_state_api.h"
 
 
 
@@ -80,7 +83,7 @@ void sig_handler(int arg){
             if ( flag )
             {
                 perror("P operate error") ;
-                return -1 ;
+                return ;
             }
             for(i=0;i<ARRAY_SIZE(shms->process_register);i++){
                 if(shms->process_register[i].process_type == process_type)
@@ -89,7 +92,7 @@ void sig_handler(int arg){
             if (sem_V(shms->semid, 0) < 0)
             {
                 perror("V operate error") ;
-                return -1 ;
+                return ;
             }
 
 
@@ -129,7 +132,7 @@ void sig_handler(int arg){
             break;
 
         case SIGUSR1: 
-            printf(GREEN "a msg comes\n"NONE);
+            printf(REVERSE "a msg receive\n"NONE);
             pthread_cond_signal(&cond1);
             break;
         default:
@@ -194,11 +197,11 @@ int pkt_send(data_t * send_pkt_p,int size){
     list_add_tail(&(tmp_tosend_node->list),&list_tosend_head.list);
 
 
-    list_for_each_entry(tmp_tosend_node,&list_tosend_head.list,list){
 
-        printf("traversal2 num :\t%s\tname :\t%s\n",tmp_tosend_node->data.context,tmp_tosend_node->data.msg);
-
-    }
+    printf(REVERSE" a msg send\n"NONE);
+    printf(ACTION"send msg from %d to %d\n"NONE,tmp_tosend_node->data.pid_from,tmp_tosend_node->data.pid_to);
+    printf(INFO"msg is :\t%s\tname :\t%s\n"NONE,tmp_tosend_node->data.context,tmp_tosend_node->data.msg);
+    printf("\n\n");
 
     //处理数据
     //printf(YELLOW "%s send %d data to ws_client\n" NONE,processtype(send_pkt_p->msg_info.process_type),count); 
@@ -302,7 +305,7 @@ int traverse_process(void){
 
 
 
-void register_process(process_msg_t *p){
+int register_process(process_msg_t *p){
     int i=0;
     int flag = 0;
 
@@ -311,7 +314,7 @@ void register_process(process_msg_t *p){
     if ( flag )
     {
         perror("P operate error") ;
-        return ;
+        return -1;
     }
 
     for(i=0;i<ARRAY_SIZE(shms->process_register);i++){
@@ -327,10 +330,10 @@ void register_process(process_msg_t *p){
     if (sem_V(shms->semid, 0) < 0)
     {
         perror("V operate error") ;
-        return ;
+        return -1;
     }
 
-    return ;
+    return 0;
 }
 
 

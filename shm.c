@@ -13,6 +13,10 @@
 #include <stdio.h>
 #include <sys/sem.h>
 #include "print_color.h"
+#include <strings.h>
+#include <stdlib.h>
+#include "read_write_state_api.h"
+
 
 extern struct shm *shms;
 extern int shmid;
@@ -36,7 +40,7 @@ int shm_init(void){
     key_t key2;//key定义
     int fisttime = 0;
     int ret = 0;
-    long int nattch = 0;
+    int nattch = 0;
     int maxid,id;
     struct shmid_ds shmseg;
     struct shm_info shm_info;
@@ -111,7 +115,7 @@ int shm_init(void){
                 tmp_shmid = shmctl(id, SHM_STAT, &shmseg);
                 if(tmp_shmid == shmid)
                 {
-                    nattch = (long) shmseg.shm_nattch;
+                    nattch = shmseg.shm_nattch;
                     //printf("%d,%ld\t",tmp_shmid,(long) shmseg.shm_nattch);
                     break;
                 }
