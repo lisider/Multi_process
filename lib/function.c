@@ -159,7 +159,7 @@ int pkt_send(data_t * send_pkt_p,int size){
     }
 
     //同步 2 读写标识
-    while(!is_writeable_send(shms->read_write_state)){
+    while(!is_writeable(shms->read_write_state)){
         printf(WARN"sws : %s,%s,line = %d,unwriteable_times_send : %d\n"NONE,__FILE__,__func__,__LINE__,shms->unwriteable_times_send);
 
         if(++shms->unwriteable_times_send > 5)
@@ -211,7 +211,7 @@ int pkt_send(data_t * send_pkt_p,int size){
     kill(shms->data.pid_to,SIGUSR1);
 
     //处理同步问题
-    disable_writeable_send(&(shms->read_write_state));
+    disable_writeable(&(shms->read_write_state));
     shms->unwriteable_times_send = 0;
     if (sem_V(shms->semid, 0) < 0)
     {

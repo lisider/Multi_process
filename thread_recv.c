@@ -69,7 +69,7 @@ void * recv_thread_1(void *arg){
         bzero((void *)&(tmp_xxx_node1->data),sizeof(data_t));                       
         memcpy((char *)&(tmp_xxx_node1->data),(char *)&(shms->data),sizeof(data_t));
 
-        enable_writeable_send(&(shms->read_write_state));
+        enable_writeable(&(shms->read_write_state));
 
         list_for_each_safe(pos,n,&list_tosend_head.list){  		
             tmp_xxx_node2 = list_entry(pos,list_xxx_t,list);//得到外层的数据
@@ -241,7 +241,7 @@ void * recv_thread_3(void *arg){
                     }
 
                     //同步 2 读写标识
-                    while(!is_writeable_send(shms->read_write_state)){
+                    while(!is_writeable(shms->read_write_state)){
 
 
                         printf(WARN"sws : %s,%s,line = %d,unwriteable_times_send : %d\n"NONE,__FILE__,__func__,__LINE__,shms->unwriteable_times_send);
@@ -288,7 +288,7 @@ void * recv_thread_3(void *arg){
 
 
                     //处理同步问题
-                    disable_writeable_send(&(shms->read_write_state));
+                    disable_writeable(&(shms->read_write_state));
                     shms->unwriteable_times_send = 0;
                     if (sem_V(shms->semid, 0) < 0)
                     {

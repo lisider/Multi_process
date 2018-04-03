@@ -28,10 +28,9 @@
 
 
 
-
 process_type_t process_type = -1;
 
-void init(void * arg){
+void init(void * arg){//每个进程都有的一个初始化.
     printf(TODO"specific init\n"NONE);
 }
 
@@ -54,13 +53,13 @@ void call_back_PASSIVE(int count,char state){
 }    
 
 
-void todel(list_xxx_t* list_todel_head){
+void todel(list_xxx_t* list_todel_head){//websocket 独有的 发送消息的过程
 
     printf(TODO"todel fuction\n"NONE);     
     printf("sws : %s,%s,line = %d\n",__FILE__,__func__,__LINE__);
 }
 
-void waitfor(data_t * data){
+void waitfor(data_t * data){//websocket 独有的 接收的过程
     printf(TODO"waitfor fuction\n"NONE);     
 }
 
