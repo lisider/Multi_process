@@ -46,7 +46,7 @@ int shm_init(void){
     struct shm_info shm_info;
     int tmp_shmid;
 
-    int access(const char *filename, int mode);                                  
+  //  int access(const char *filename, int mode);                                  
     if(access(SHM_PATH,F_OK) != 0)                                                   
     {                                                                                
         printf("mkdir SHM_PATH\n");                                                  

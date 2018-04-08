@@ -141,12 +141,45 @@ void sig_handler(int arg){
     return ;
 }
 
+/** data_state_t find_sendstate_by_pidto(int pid_to){//TODO */
+/**  */
+/**     int i = 0; */
+/**     int flag = 0; */
+/**     int pid = -1; */
+/**     char is_websocket = 0; */
+/**  */
+/**  */
+/**     flag = sem_P(shms->semid,0)  ; */
+/**     if ( flag ) */
+/**     { */
+/**         perror("P operate error") ; */
+/**         return -1 ; */
+/**     } */
+/**  */
+/**     if(shms->process_register[process_type].pid == pid_to) */
+/**         if(shms->process_register[process_type].process_type == WEBSOCKET) */
+/**             is_websocket = 1; */
+/**  */
+/**     if (sem_V(shms->semid, 0) < 0) */
+/**     { */
+/**         perror("V operate error") ; */
+/**         return -1 ; */
+/**     } */
+/**  */
+/**     return is_websocket ? SEND_WEBSOCKET:SEND_NORMAL; */
+/** } */
 
 int pkt_send(data_t * send_pkt_p,int size){
 
     int ret = 0;
     int i = 0;
     list_xxx_t *tmp_tosend_node;
+
+
+	//0.修改 send_pkt_p
+	
+//	send_pkt_p->data_state = find_sendstate_by_pidto(send_pkt_p->pid_to);
+
 
     //处理同步问题
     //同步 1 信号量
@@ -190,13 +223,13 @@ int pkt_send(data_t * send_pkt_p,int size){
 
     }
 
+	
     tmp_tosend_node = (list_xxx_t *)malloc(sizeof(list_xxx_t));
     bzero((void *)&(tmp_tosend_node->data),sizeof(data_t));                       
     memcpy((char *)&(tmp_tosend_node->data),send_pkt_p,size);
 
-    list_add_tail(&(tmp_tosend_node->list),&list_tosend_head.list);
-
-
+	if(tmp_tosend_node->data.data_state == SEND_NORMAL || tmp_tosend_node->data.data_state == SEND_WEBSOCKET)
+		list_add_tail(&(tmp_tosend_node->list),&list_tosend_head.list);
 
     printf(REVERSE" a msg send\n"NONE);
     printf(ACTION"send msg from %d to %d\n"NONE,tmp_tosend_node->data.pid_from,tmp_tosend_node->data.pid_to);
@@ -219,6 +252,8 @@ int pkt_send(data_t * send_pkt_p,int size){
         return -1 ;
     }
 
+	if(tmp_tosend_node->data.data_state == RECV_1 || tmp_tosend_node->data.data_state == RECV_2)
+		free(tmp_tosend_node);
     return  0;
 }
 

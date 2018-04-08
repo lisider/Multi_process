@@ -181,6 +181,7 @@ int main(int argc,char ** argv){
         }
 
         data.pid_to = findpidbyname(AUDIO);
+		data.data_state = (process_type == WEBSOCKET ? SEND_WEBSOCKET:SEND_NORMAL);
         printf(INFO"%s is  on-line\n\n\n"NONE,whoami(AUDIO));
 
         ret = pkt_send(&data,sizeof(data));
