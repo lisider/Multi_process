@@ -70,7 +70,9 @@ void sig_handler(int arg){
     struct shmid_ds shmseg;
     struct shm_info shm_info;
     int i;
-            int flag = 0;
+	int flag = 0;
+    list_xxx_t *tmp_xxx_node;
+	struct list_head *pos,*pos2,*n;
 
     switch(arg){
 
@@ -123,7 +125,26 @@ void sig_handler(int arg){
 
 
             //反注册
+			//链表清空
 
+
+            list_for_each_safe(pos,n,&list_tosend_head.list){  		
+                tmp_xxx_node = list_entry(pos,list_xxx_t,list);//得到外层的数据
+                    list_del(pos); // 注意,删除链表,是删除的list_head,还需要删除 外层的数据 ,删除一个节点之后,并没有破坏这个节点和外围数据的位置关系
+                    free(tmp_xxx_node);//释放数据
+            }
+
+            list_for_each_safe(pos,n,&list_todel_head.list){  		
+                tmp_xxx_node = list_entry(pos,list_xxx_t,list);//得到外层的数据
+                    list_del(pos); // 注意,删除链表,是删除的list_head,还需要删除 外层的数据 ,删除一个节点之后,并没有破坏这个节点和外围数据的位置关系
+                    free(tmp_xxx_node);//释放数据
+            }
+
+            list_for_each_safe(pos,n,&list_deled_head.list){  		
+                tmp_xxx_node = list_entry(pos,list_xxx_t,list);//得到外层的数据
+                    list_del(pos); // 注意,删除链表,是删除的list_head,还需要删除 外层的数据 ,删除一个节点之后,并没有破坏这个节点和外围数据的位置关系
+                    free(tmp_xxx_node);//释放数据
+            }
 
 
 
@@ -135,6 +156,24 @@ void sig_handler(int arg){
             printf(REVERSE "a msg receive\n"NONE);
             pthread_cond_signal(&cond1);
             break;
+
+        case SIGALRM: //退出信号
+            //定时删链表
+            printf(GREEN "i am going to Traversing to_send list\n" NONE);
+			list_for_each_safe(pos,n,&list_tosend_head.list){
+                tmp_xxx_node = list_entry(pos,list_xxx_t,list);//得到外层的数据
+                printf(GREEN "del with one subtraction ,count : %d, left dead_line :%d\n" NONE,tmp_xxx_node->data.count,tmp_xxx_node->data.deadline-1);
+                if(--tmp_xxx_node->data.deadline == 0){//对链表中的数据进行判断,如果满足条件就删节点
+                    list_del(pos); // 注意,删除链表,是删除的list_head,还需要删除 外层的数据 ,删除一个节点之后,并没有破坏这个节点和外围数据的位置关系
+                    free(tmp_xxx_node);//释放数据
+                    printf(YELLOW"remove node from list_xxx_head because of dead_line, count is %d\n"NONE,tmp_xxx_node->data.count);
+                }
+            }
+
+            //循环链表,并删除剩余=0 的
+            alarm(1);
+            break;
+
         default:
             ;
     }
@@ -178,7 +217,7 @@ int pkt_send(data_t * send_pkt_p,int size){
 
 	//0.修改 send_pkt_p
 	
-//	send_pkt_p->data_state = find_sendstate_by_pidto(send_pkt_p->pid_to);
+	send_pkt_p->deadline = 6;
 
 
     //处理同步问题
@@ -231,7 +270,7 @@ int pkt_send(data_t * send_pkt_p,int size){
 	if(tmp_tosend_node->data.data_state == SEND_NORMAL || tmp_tosend_node->data.data_state == SEND_WEBSOCKET)
 		list_add_tail(&(tmp_tosend_node->list),&list_tosend_head.list);
 
-    printf(REVERSE" a msg send\n"NONE);
+    printf(REVERSE" a msg send ,sha1 is %s\n"NONE,tmp_tosend_node->data.sha1);
     printf(ACTION"send msg from %d to %d\n"NONE,tmp_tosend_node->data.pid_from,tmp_tosend_node->data.pid_to);
     printf(INFO"msg is :\t%s\tname :\t%s\n"NONE,tmp_tosend_node->data.context,tmp_tosend_node->data.msg);
     printf("\n\n");
@@ -389,8 +428,17 @@ int findpidbyname(process_type_t process_type){
         return -1 ;
     }
 
-    if(shms->process_register[process_type].pid != 0)
-        pid = shms->process_register[process_type].pid;
+
+    for(i=0;i<ARRAY_SIZE(shms->process_register);i++){
+        if(shms->process_register[i].process_type == process_type && shms->process_register[process_type].pid != 0){
+            //memcpy((char *)&(shms->process_register[i]),p,sizeof(shms->process_register[i]));
+			pid = shms->process_register[i].pid;
+            break;
+        }
+    }
+
+    /** if(shms->process_register[process_type].pid != 0) */
+    /**     pid = shms->process_register[process_type].pid; */
 
 
     if (sem_V(shms->semid, 0) < 0)

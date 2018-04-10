@@ -47,6 +47,8 @@ typedef struct {
 	int pid_to; // 表示接收数据的进程
 	int pid_from; //表示发送数据的进程
 	data_state_t data_state;
+	int deadline;
+	char sha1[40];
 }data_t;
 
 typedef struct  _list_xxx_t{
@@ -126,5 +128,17 @@ pthread_mutex_t mutex;
 pthread_t       pthid1;
 pthread_t       pthid2;
 pthread_t       pthid3;
+
+#define VIEWLIST \
+    do{\
+    i = 0;j = 0; k = 0;\
+    list_for_each_entry(tmp_xxx_node,&list_tosend_head.list,list)\
+    i++;\
+    list_for_each_entry(tmp_xxx_node,&list_todel_head.list,list)\
+    j++;\
+    list_for_each_entry(tmp_xxx_node,&list_deled_head.list,list)\
+    k++;\
+    printf(GREEN "%s,%s,line = %d,list_tosend_head : %d,list_todel_head : %d,list_deled_head : %d\n" NONE,__FILE__,__func__,__LINE__,i,j,k);\
+    }while(0)
 
 #endif

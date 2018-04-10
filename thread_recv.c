@@ -29,17 +29,6 @@
 #include "shm.h"
 
 
-#define VIEWLIST \
-    do{\
-    i = 0;j = 0; k = 0;\
-    list_for_each_entry(tmp_xxx_node,&list_tosend_head.list,list)\
-    i++;\
-    list_for_each_entry(tmp_xxx_node,&list_todel_head.list,list)\
-    j++;\
-    list_for_each_entry(tmp_xxx_node,&list_deled_head.list,list)\
-    k++;\
-    printf(GREEN "%s,%s,line = %d,list_tosend_head : %d,list_todel_head : %d,list_deled_head : %d\n" NONE,__FILE__,__func__,__LINE__,i,j,k);\
-    }while(0)
 
 // printf("sws : %s,%s,line = %d\n",__FILE__,__func__,__LINE__);
 
@@ -90,7 +79,8 @@ void * recv_thread_1(void *arg){
 
 				list_for_each_safe(pos,n,&list_tosend_head.list){
 					tmp_xxx_node2 = list_entry(pos,list_xxx_t,list);//得到外层的数据
-					if(tmp_xxx_node1->data.count == tmp_xxx_node2->data.count){//对链表中的数据进行判断,如果满足条件就删节点
+					//if(tmp_xxx_node1->data.count == tmp_xxx_node2->data.count){//对链表中的数据进行判断,如果满足条件就删节点
+					if(!strcmp(tmp_xxx_node1->data.sha1,tmp_xxx_node2->data.sha1)){//对链表中的数据进行判断,如果满足条件就删节点
 						is_exist = 1;
 						break;
 					}
@@ -113,7 +103,8 @@ void * recv_thread_1(void *arg){
 		  case RECV_2:
 				list_for_each_safe(pos,n,&list_tosend_head.list){
 					tmp_xxx_node2 = list_entry(pos,list_xxx_t,list);//得到外层的数据
-					if(tmp_xxx_node1->data.count == tmp_xxx_node2->data.count){//对链表中的数据进行判断,如果满足条件就删节点
+					//if(tmp_xxx_node1->data.count == tmp_xxx_node2->data.count){//对链表中的数据进行判断,如果满足条件就删节点
+					if(!strcmp(tmp_xxx_node1->data.sha1,tmp_xxx_node2->data.sha1)){//对链表中的数据进行判断,如果满足条件就删节点
 						is_exist = 1;
 						break;
 					}
@@ -176,7 +167,16 @@ void * recv_thread_2(void *arg){
 						perror("P operate error") ;
 						return NULL ;
 					}
-					todel = shms->process_register[process_type].msg_del_method.todel;
+
+
+					for(i=0;i<ARRAY_SIZE(shms->process_register);i++){
+						if(shms->process_register[i].process_type == process_type && shms->process_register[process_type].pid != 0){
+							//memcpy((char *)&(shms->process_register[i]),p,sizeof(shms->process_register[i]));
+							todel = shms->process_register[i].msg_del_method.todel;
+							break;
+						}
+					}
+
 					if (sem_V(shms->semid, 0) < 0)
 					{
 						perror("V operate error") ;
@@ -237,7 +237,12 @@ void * recv_thread_3(void *arg){
 			perror("P operate error") ;
 			return NULL ;
 		}
-		waitfor = shms->process_register[process_type].msg_del_method.waitfor;
+		for(i=0;i<ARRAY_SIZE(shms->process_register);i++){
+			if(shms->process_register[i].process_type == process_type && shms->process_register[process_type].pid != 0){
+				waitfor = shms->process_register[i].msg_del_method.waitfor;
+				break;
+			}
+		}
 		if (sem_V(shms->semid, 0) < 0)
 		{
 			perror("V operate error");
