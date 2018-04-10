@@ -80,7 +80,7 @@ void * recv_thread_1(void *arg){
 				list_for_each_safe(pos,n,&list_tosend_head.list){
 					tmp_xxx_node2 = list_entry(pos,list_xxx_t,list);//得到外层的数据
 					//if(tmp_xxx_node1->data.count == tmp_xxx_node2->data.count){//对链表中的数据进行判断,如果满足条件就删节点
-					if(!strcmp(tmp_xxx_node1->data.sha1,tmp_xxx_node2->data.sha1)){//对链表中的数据进行判断,如果满足条件就删节点
+					if(tmp_xxx_node1->data.sha1[0] != 0 && !strcmp(tmp_xxx_node1->data.sha1,tmp_xxx_node2->data.sha1) && tmp_xxx_node1->data.count == tmp_xxx_node2->data.count){//对链表中的数据进行判断,如果满足条件就删节点
 						is_exist = 1;
 						break;
 					}
@@ -104,7 +104,7 @@ void * recv_thread_1(void *arg){
 				list_for_each_safe(pos,n,&list_tosend_head.list){
 					tmp_xxx_node2 = list_entry(pos,list_xxx_t,list);//得到外层的数据
 					//if(tmp_xxx_node1->data.count == tmp_xxx_node2->data.count){//对链表中的数据进行判断,如果满足条件就删节点
-					if(!strcmp(tmp_xxx_node1->data.sha1,tmp_xxx_node2->data.sha1)){//对链表中的数据进行判断,如果满足条件就删节点
+					if(tmp_xxx_node1->data.sha1[0] != 0 &&  !strcmp(tmp_xxx_node1->data.sha1,tmp_xxx_node2->data.sha1) && tmp_xxx_node1->data.count == tmp_xxx_node2->data.count){//对链表中的数据进行判断,如果满足条件就删节点
 						is_exist = 1;
 						break;
 					}
