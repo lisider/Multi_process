@@ -153,7 +153,11 @@ int main(int argc,char ** argv){
     process_msg.msg_del_method.todel = NULL;
     process_msg.msg_del_method.waitfor = NULL;
 
-    register_process(&process_msg);
+    ret = register_process(&process_msg);
+    if(ret == -2){
+        printf(ERROR"the process type has been registed,please change a process type\n"NONE);
+        exit(-5);
+    }
 
 
     //遍历存在的进程

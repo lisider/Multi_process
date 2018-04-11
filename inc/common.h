@@ -57,10 +57,13 @@ typedef struct  _list_xxx_t{
 }list_xxx_t;
 
 typedef enum {
+    NONE_PROCESS,
 	BLUETOOTH,
 	AUDIO,
 	WEBSOCKET,
+    STATE,
 } process_type_t;
+
 
 
 typedef struct{
