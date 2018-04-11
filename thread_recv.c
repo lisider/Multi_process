@@ -170,7 +170,7 @@ void * recv_thread_2(void *arg){
 
 
 					for(i=0;i<ARRAY_SIZE(shms->process_register);i++){
-						if(shms->process_register[i].process_type == process_type && shms->process_register[process_type].pid != 0){
+						if(shms->process_register[i].process_type == process_type && shms->process_register[i].pid != 0){
 							//memcpy((char *)&(shms->process_register[i]),p,sizeof(shms->process_register[i]));
 							todel = shms->process_register[i].msg_del_method.todel;
 							break;
@@ -238,7 +238,7 @@ void * recv_thread_3(void *arg){
 			return NULL ;
 		}
 		for(i=0;i<ARRAY_SIZE(shms->process_register);i++){
-			if(shms->process_register[i].process_type == process_type && shms->process_register[process_type].pid != 0){
+			if(shms->process_register[i].process_type == process_type && shms->process_register[i].pid != 0){
 				waitfor = shms->process_register[i].msg_del_method.waitfor;
 				break;
 			}
