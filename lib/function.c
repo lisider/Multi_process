@@ -33,6 +33,7 @@ char process_names[64][32]={
     "audio",
     "websocket",
     "state",
+    "state2",
     "unkown"
 };
 
@@ -394,7 +395,7 @@ int register_process(process_msg_t *p){
         if (shms->process_register[i].process_type == p->process_type)
         {
 
-            printf("process type has been registed,type is %d,in process_register[%d]\n",shms->process_register[i].process_type,i);
+            printf("process type has been registed or its type is zero,type is %d,in process_register[%d]\n",shms->process_register[i].process_type,i);
 
             if (sem_V(shms->semid, 0) < 0)
             {

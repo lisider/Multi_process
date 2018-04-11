@@ -62,6 +62,7 @@ typedef enum {
 	AUDIO,
 	WEBSOCKET,
     STATE,
+    STATE2,
 } process_type_t;
 
 
