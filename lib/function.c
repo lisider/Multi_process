@@ -430,7 +430,7 @@ int findpidbyname(process_type_t process_type){
 
 
     for(i=0;i<ARRAY_SIZE(shms->process_register);i++){
-        if(shms->process_register[i].process_type == process_type && shms->process_register[process_type].pid != 0){
+        if(shms->process_register[i].process_type == process_type && shms->process_register[i].pid != 0){
             //memcpy((char *)&(shms->process_register[i]),p,sizeof(shms->process_register[i]));
 			pid = shms->process_register[i].pid;
             break;
