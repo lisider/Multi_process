@@ -39,8 +39,8 @@ char process_names[64][32]={
 };
 
 
-void todel(list_xxx_t* list_todel_head);
-void waitfor(data_t *data);
+int todel(list_xxx_t* list_todel_head);
+int waitfor(data_t *data);
 
 
 

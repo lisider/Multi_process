@@ -56,14 +56,20 @@ void call_back_PASSIVE(int count,char state){
 }    
 
 
-void todel(list_xxx_t* list_todel_head){//websocket 独有的 发送消息的过程
+int todel(list_xxx_t* list_todel_head){//websocket 独有的 发送消息的过程
 
     printf(TODO"todel fuction\n"NONE);     
-    printf("sws : %s,%s,line = %d\n",__FILE__,__func__,__LINE__);
+    //printf("sws : %s,%s,line = %d\n",__FILE__,__func__,__LINE__);
+    return -1;
 }
 
-void waitfor(data_t * data){//websocket 独有的 接收的过程
+int waitfor(data_t * data){//websocket 独有的 接收的过程
+    int i;
+    for(i = 0; i < 2000;i++){
+        usleep(1000);
+    }
     printf(TODO"waitfor fuction\n"NONE);     
+    return -1;
 }
 
 
@@ -99,6 +105,7 @@ int main(int argc,char ** argv){
 
     //填充要注册的信息
 
+
     process_msg.semid = semid;
     process_msg.pid = getpid();
     process_msg.process_type  = process_type;
@@ -106,8 +113,13 @@ int main(int argc,char ** argv){
     process_msg.msg_del_method.callback_ack = call_back_ACK;
     process_msg.msg_del_method.callback_passive = call_back_PASSIVE;
     process_msg.msg_del_method.init = init;
-    process_msg.msg_del_method.todel = NULL;
-    process_msg.msg_del_method.waitfor = NULL;
+    if (process_type  == WEBSOCKET){
+        process_msg.msg_del_method.todel = todel;
+        process_msg.msg_del_method.waitfor = waitfor;
+    }else{
+        process_msg.msg_del_method.todel = NULL;
+        process_msg.msg_del_method.waitfor = NULL;
+    }
 
     ret = register_process(&process_msg);
     if(ret == -2){
@@ -121,7 +133,15 @@ int main(int argc,char ** argv){
 
     //printf("BLUETOOTH is_existed :%d\n",is_existed(BLUETOOTH));
 
+
+
     alarm(1);
+
+    if (process_type  == WEBSOCKET){
+        while(1);
+    }
+
+
     while(1){
 
         printf("\n\n\n\n\n\n");
@@ -137,6 +157,7 @@ int main(int argc,char ** argv){
             exit(-89);
         }
 
+#if 0
         while(findpidbyname(AUDIO) <=0 || findpidbyname(AUDIO) == getpid()){
             if(findpidbyname(AUDIO) <=0)
                 printf(WARN"AUDIO is not on line\n"NONE);
@@ -150,6 +171,20 @@ int main(int argc,char ** argv){
         data.pid_to = findpidbyname(AUDIO);
         data.data_state = (process_type == WEBSOCKET ? SEND_WEBSOCKET:SEND_NORMAL);
         printf(INFO"%s is  on-line\n\n\n"NONE,whoami(AUDIO));
+#endif
+        while(findpidbyname(WEBSOCKET) <=0 || findpidbyname(WEBSOCKET) == getpid()){
+            if(findpidbyname(WEBSOCKET) <=0)
+                printf(WARN"WEBSOCKET is not on line\n"NONE);
+            else if(findpidbyname(WEBSOCKET) == getpid()){
+                printf(WARN"can't send msg to myself, i am %s,going to block\n"NONE,whoami(process_type));
+                while(1);
+            }
+            sleep(1);
+        }
+
+        data.pid_to = findpidbyname(WEBSOCKET);
+        data.data_state = (process_type == WEBSOCKET ? SEND_WEBSOCKET:SEND_NORMAL);
+        printf(INFO"%s is  on-line\n\n\n"NONE,whoami(WEBSOCKET));
 
         ret = pkt_send(&data,sizeof(data));
         if( ret < 0 ){

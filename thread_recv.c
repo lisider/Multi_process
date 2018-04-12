@@ -143,7 +143,7 @@ void * recv_thread_2(void *arg){
     list_xxx_t *tmp_xxx_node;
     int flag = 0;
     int i , j , k;
-    void (*todel)(list_xxx_t* list_todel_head) = NULL;
+    int (*todel)(list_xxx_t* list_todel_head) = NULL;
 
     while(1){
 
@@ -172,7 +172,7 @@ void * recv_thread_2(void *arg){
                 SEM_V_NULL(shms->semid,SHM_RES);
 
                 if (todel)
-                    todel(&list_todel_head);//这里面要处理给服务器发包 ,给进程发包,给进程的发包的时候需要置位 RECV_1;
+                    todel(NULL);//这里面要处理给服务器发包 ,给进程发包,给进程的发包的时候需要置位 RECV_1;
                 else
                     printf(ERROR"error happend 23\n"NONE);
 
@@ -211,7 +211,7 @@ void * recv_thread_3(void *arg){
     data_t data;
     int flag = 0;
     int ret = 0;
-    void (*waitfor)(data_t *data) = NULL;
+    int (*waitfor)(data_t *data) = NULL;
     int i = 0 , j  = 0 ,  k = 0;
     pid_t pid_tmp = -1;
 
@@ -232,7 +232,8 @@ void * recv_thread_3(void *arg){
         while(1){
 
             //阻塞
-            waitfor(&data);
+            if(waitfor(&data) < 0)
+                continue;
 
             data.data_state = RECV_2;
 
