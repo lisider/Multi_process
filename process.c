@@ -116,44 +116,44 @@ int main(int argc,char ** argv){
 
     //printf("BLUETOOTH is_existed :%d\n",is_existed(BLUETOOTH));
 
-	alarm(1);
+    alarm(1);
     while(1){
 
-		printf("\n\n\n\n\n\n");
-		// 包,发送 ,发送给 AUDIO的包
-		bzero(&data,sizeof(data));
-		strcpy((char *)&(data.context),"JSON package");
-		strcpy((char *)&(data.msg),"Extra string information");
-		data.count = ++count;
-		data.pid_from = getpid();
-		ret = get_str_sha1((char *)&data,sizeof(data),data.sha1);
-		if(ret < 0){
-			printf("get file sha1 error\n");
-			exit(-89);
-		}
+        printf("\n\n\n\n\n\n");
+        // 包,发送 ,发送给 AUDIO的包
+        bzero(&data,sizeof(data));
+        strcpy((char *)&(data.context),"JSON package");
+        strcpy((char *)&(data.msg),"Extra string information");
+        data.count = ++count;
+        data.pid_from = getpid();
+        ret = get_str_sha1((char *)&data,sizeof(data),data.sha1);
+        if(ret < 0){
+            printf("get file sha1 error\n");
+            exit(-89);
+        }
 
-		while(findpidbyname(AUDIO) <=0 || findpidbyname(AUDIO) == getpid()){
-			if(findpidbyname(AUDIO) <=0)
-				printf(WARN"AUDIO is not on line\n"NONE);
-			else if(findpidbyname(AUDIO) == getpid()){
-				printf(WARN"can't send msg to myself, i am %s,going to block\n"NONE,whoami(process_type));
-				while(1);
-			}
-			sleep(1);
-		}
+        while(findpidbyname(AUDIO) <=0 || findpidbyname(AUDIO) == getpid()){
+            if(findpidbyname(AUDIO) <=0)
+                printf(WARN"AUDIO is not on line\n"NONE);
+            else if(findpidbyname(AUDIO) == getpid()){
+                printf(WARN"can't send msg to myself, i am %s,going to block\n"NONE,whoami(process_type));
+                while(1);
+            }
+            sleep(1);
+        }
 
-		data.pid_to = findpidbyname(AUDIO);
-		data.data_state = (process_type == WEBSOCKET ? SEND_WEBSOCKET:SEND_NORMAL);
-		printf(INFO"%s is  on-line\n\n\n"NONE,whoami(AUDIO));
+        data.pid_to = findpidbyname(AUDIO);
+        data.data_state = (process_type == WEBSOCKET ? SEND_WEBSOCKET:SEND_NORMAL);
+        printf(INFO"%s is  on-line\n\n\n"NONE,whoami(AUDIO));
 
-		ret = pkt_send(&data,sizeof(data));
-		if( ret < 0 ){
-			printf("error happed\n");
-		}
+        ret = pkt_send(&data,sizeof(data));
+        if( ret < 0 ){
+            printf("error happed\n");
+        }
 
-		for(i = 0;i<30000;i++)
-			for(j = 0; j < 10000;j++);
-	}
+        for(i = 0;i<30000;i++)
+            for(j = 0; j < 10000;j++);
+    }
 
-	return 0;
+    return 0;
 }
