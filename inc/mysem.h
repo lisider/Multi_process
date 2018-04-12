@@ -8,6 +8,7 @@
 #ifndef __MYSEM__H_
 #define __MYSEM__H_
 
+
 extern int sem_P(int semid, int semnum);
 extern int sem_V(int semid, int semnum);
 
@@ -21,27 +22,32 @@ extern int sem_V(int semid, int semnum);
 
 
 #define SEM_P(semid,semnum) SEM_P_BASE(semid,semnum)  return ;  }  }while(0)
-
-
 #define SEM_V(semid,semnum)  SEM_V_BASE(semid,semnum)  return ;  }  }while(0)
-
 #define SEM_P_INT(semid,semnum)  SEM_P_BASE(semid,semnum)  return -33;  }  }while(0)
-
-
 #define SEM_V_INT(semid,semnum)  SEM_V_BASE(semid,semnum)  return -34;  }  }while(0)
 #define SEM_P_NULL(semid,semnum)  SEM_P_BASE(semid,semnum)  return NULL;  }  }while(0)
-
-
 #define SEM_V_NULL(semid,semnum)  SEM_V_BASE(semid,semnum) return NULL;  }  }while(0)
 
-enum shared_resource{
+
+
+enum shared_resource_Interprocess{
     SHM_RES,
+};
+
+
+enum shared_resource_Withinprocess{
     LIST_TO_SEND,
     LIST_TODEL,
     LIST_DELED,
     NUMBEROFSR,
 };
-
+union semun {
+    int val; /* value for SETVAL */
+    struct semid_ds *buf; /* buffer for IPC_STAT, IPC_SET */
+    unsigned short *array; /* array for GETALL, SETALL */
+    struct seminfo *__buf; /* buffer for IPC_INFO */
+};
+int my_sem_init(char * path,int * semid,int number);
 //SEM_P(shms->semid,SHM_RES);
 //SEM_V(shms->semid,SHM_RES);
 #endif

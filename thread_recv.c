@@ -29,6 +29,7 @@
 #include "shm.h"
 #include "mysem.h"
 
+extern int semid;
 
 
 // printf("sws : %s,%s,line = %d\n",__FILE__,__func__,__LINE__);
@@ -58,9 +59,9 @@ void * recv_thread_1(void *arg){
             case SEND_NORMAL:
             case SEND_WEBSOCKET:
                 VIEWLIST;
-                SEM_P_NULL(shms->semid,LIST_TODEL);
+                SEM_P_NULL(semid,LIST_TODEL);
                 list_add_tail(&(tmp_xxx_node1->list),&list_todel_head.list);
-                SEM_V_NULL(shms->semid,LIST_TODEL);
+                SEM_V_NULL(semid,LIST_TODEL);
                 printf(INFO"msg is request,"NONE ACTION" insert the msg into list_todel_head\n"NONE);
                 VIEWLIST;
                 printf("\n\n");
@@ -69,7 +70,7 @@ void * recv_thread_1(void *arg){
 
             case RECV_1:
 
-                SEM_P_NULL(shms->semid,LIST_TO_SEND);
+                SEM_P_NULL(semid,LIST_TO_SEND);
                 list_for_each_safe(pos,n,&list_tosend_head.list){
                     tmp_xxx_node2 = list_entry(pos,list_xxx_t,list);//得到外层的数据
                     if(tmp_xxx_node1->data.sha1[0] != 0 && !strcmp(tmp_xxx_node1->data.sha1,tmp_xxx_node2->data.sha1) && tmp_xxx_node1->data.count == tmp_xxx_node2->data.count){//对链表中的数据进行判断,如果满足条件就删节点
@@ -90,12 +91,12 @@ void * recv_thread_1(void *arg){
                     //调用回调,说不存在
                     //已经不用调用回调了,因为链表已经不存在了,标识着已经做过回调了
                 }
-                SEM_V_NULL(shms->semid,LIST_TO_SEND);
+                SEM_V_NULL(semid,LIST_TO_SEND);
 
                 break;
 
             case RECV_2:
-                SEM_P_NULL(shms->semid,LIST_TO_SEND);
+                SEM_P_NULL(semid,LIST_TO_SEND);
                 list_for_each_safe(pos,n,&list_tosend_head.list){
                     tmp_xxx_node2 = list_entry(pos,list_xxx_t,list);//得到外层的数据
                     if(tmp_xxx_node1->data.sha1[0] != 0 &&  !strcmp(tmp_xxx_node1->data.sha1,tmp_xxx_node2->data.sha1) && tmp_xxx_node1->data.count == tmp_xxx_node2->data.count){//对链表中的数据进行判断,如果满足条件就删节点
@@ -120,7 +121,7 @@ void * recv_thread_1(void *arg){
                     //调用回调,说不存在
                     //已经不用调用回调了,因为链表已经不存在了,标识着已经做过回调了
                 }
-                SEM_V_NULL(shms->semid,LIST_TO_SEND);
+                SEM_V_NULL(semid,LIST_TO_SEND);
 
                 break;
 
@@ -150,7 +151,7 @@ void * recv_thread_2(void *arg){
         pthread_cond_wait(&cond2,&mutex);
 
         //得到数据
-        SEM_P_NULL(shms->semid,LIST_TODEL);
+        SEM_P_NULL(semid,LIST_TODEL);
         list_for_each_safe(pos,n,&list_todel_head.list){  		
             tmp_xxx_node1 = list_entry(pos,list_xxx_t,list);//得到外层的数据
 
@@ -194,7 +195,7 @@ void * recv_thread_2(void *arg){
 
             }
         }
-        SEM_V_NULL(shms->semid,LIST_TODEL);
+        SEM_V_NULL(semid,LIST_TODEL);
         pthread_mutex_unlock(&mutex);
     }
     return NULL;
@@ -240,7 +241,7 @@ void * recv_thread_3(void *arg){
                 printf("error happed\n");
             }
 
-            SEM_P_NULL(shms->semid,LIST_DELED);
+            SEM_P_NULL(semid,LIST_DELED);
 
             list_for_each_safe(pos,n,&list_deled_head.list){  		
                 tmp_xxx_node = list_entry(pos,list_xxx_t,list);//得到外层的数据
@@ -252,7 +253,7 @@ void * recv_thread_3(void *arg){
                     printf("\n\n");
                 }
             }
-            SEM_V_NULL(shms->semid,LIST_DELED);
+            SEM_V_NULL(semid,LIST_DELED);
         }
     }
 
@@ -261,7 +262,7 @@ void * recv_thread_3(void *arg){
         pthread_mutex_lock(&mutex);
         pthread_cond_wait(&cond3,&mutex);
 
-        SEM_P_NULL(shms->semid,LIST_DELED);
+        SEM_P_NULL(semid,LIST_DELED);
         list_for_each_safe(pos,n,&list_deled_head.list){  		
             tmp_xxx_node1 = list_entry(pos,list_xxx_t,list);//得到外层的数据
             //printf("one delte in list_deled_head \n");
@@ -295,7 +296,7 @@ void * recv_thread_3(void *arg){
             }
 
         }
-        SEM_V_NULL(shms->semid,LIST_DELED);
+        SEM_V_NULL(semid,LIST_DELED);
     }
     return NULL;
 }

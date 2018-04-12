@@ -103,12 +103,6 @@ struct shm
 };
 
 
-union semun {
-    int val; /* value for SETVAL */
-    struct semid_ds *buf; /* buffer for IPC_STAT, IPC_SET */
-    unsigned short *array; /* array for GETALL, SETALL */
-    struct seminfo *__buf; /* buffer for IPC_INFO */
-};
 
 
 extern process_type_t process_type;
@@ -133,6 +127,7 @@ pthread_mutex_t mutex;
 pthread_t       pthid1;
 pthread_t       pthid2;
 pthread_t       pthid3;
+extern int semid;
 
 #define VIEWLIST \
     do{\

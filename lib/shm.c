@@ -76,33 +76,9 @@ int shm_init(void){
         bzero(shms,sizeof(struct shm)); //清 0 共享内存
         init_status((char *)&(shms->read_write_state));
         shms->unwriteable_times_send=0;
-        //sem_init((sem_t *)&(shms->sem), 0, 1); 
-        union semun arg;
-
-        key2 = ftok("/tmp", 0x66 ) ;
-        if ( key2 < 0 )
-        {
-            perror("ftok key2 error") ;
-            return -1 ;
-        }
-        /***本程序创建了4个信号量**/ //一个用于内存的互斥,另外三个分别用于3个链表的互斥
-        shms->semid = semget(key2,NUMBEROFSR,IPC_CREAT|0600);
-        if (shms->semid == -1)
-        {
-            perror("create semget error");
-            return -1;
-        }
-
-        arg.val = 1;
-        for ( i = 0; i < NUMBEROFSR; i++ ) {
-            /***对0号信号量设置初始值***/
-            ret =semctl(shms->semid,i,SETVAL,arg);
-            if (ret < 0 )
-            {
-                perror("ctl sem error");
-                semctl(shms->semid,0,IPC_RMID,arg);
-                return -1 ;
-            }
+        ret = my_sem_init("/tmp",&(shms->semid),1);
+        if(ret < 0){
+            printf(RED"my_sem_init failed\n"NONE);
         }
 
     }else{

@@ -73,20 +73,31 @@ void sig_handler(int arg){
     int i;
     list_xxx_t *tmp_xxx_node;
     struct list_head *pos,*pos2,*n;
-    int ret;
-    int semid;
+    int ret = 0;
+    int semid_nterprocess = 0;
 
     switch(arg){
 
         case SIGINT: //退出信号
 
             SEM_P(shms->semid,SHM_RES);
-            semid = shms->semid;
+            semid_nterprocess = shms->semid;
+
             //1.注销进程信息
             for(i=0;i<ARRAY_SIZE(shms->process_register);i++){
-                if(shms->process_register[i].process_type == process_type)
+                if(shms->process_register[i].process_type == process_type){
+                    ret = semctl(shms->process_register[i].semid,0,IPC_RMID);
+                    if (ret == -1){
+                        perror("semctl IPC_RMID");
+                        printf(RED"semctl failed\n"NONE);
+                    }
+                    printf(YELLOW"\ndestory Semaphore Within the process\n"NONE);
                     bzero(&(shms->process_register[i]),sizeof(shms->process_register[i]));
+                    printf(YELLOW"Destroy registration information\n"NONE);
+
+                }
             }
+
             SEM_V(shms->semid,SHM_RES);
 
 
@@ -105,17 +116,17 @@ void sig_handler(int arg){
             }
 
             shmdt(shms);
-            printf(YELLOW"\nCanceling mappings to the shm memory\n"NONE);
+            printf(YELLOW"Canceling mappings to the shm memory\n"NONE);
 
             if(nattch == 1)
             {
                 //2.销毁sem
-                ret = semctl(semid,0,IPC_RMID);
+                ret = semctl(semid_nterprocess,0,IPC_RMID);
                 if (ret == -1){
                     perror("semctl IPC_RMID");
                     printf(RED"semctl failed\n"NONE);
                 }
-                printf(YELLOW"destory Semaphore becaseof i am the last process\n"NONE);
+                printf(YELLOW"destory Semaphore Interprocess becaseof i am the last process\n"NONE);
 
                 shmctl(shmid, IPC_RMID, NULL);
                 printf(YELLOW"Destroy shared memory becaseof i am the last process\n"NONE);
@@ -160,7 +171,7 @@ void sig_handler(int arg){
         case SIGALRM: //定时信号
             //定时删链表
             printf(GREEN "i am going to Traversing to_send list\n" NONE);
-            SEM_P(shms->semid,LIST_TO_SEND);
+            SEM_P(semid,LIST_TO_SEND);
             list_for_each_safe(pos,n,&list_tosend_head.list){
                 tmp_xxx_node = list_entry(pos,list_xxx_t,list);//得到外层的数据
                 printf(GREEN "del with one subtraction ,count : %d, left dead_line :%d\n" NONE,tmp_xxx_node->data.count,tmp_xxx_node->data.deadline-1);
@@ -170,7 +181,7 @@ void sig_handler(int arg){
                     printf(YELLOW"remove node from list_xxx_head because of dead_line, count is %d\n"NONE,tmp_xxx_node->data.count);
                 }
             }
-            SEM_V(shms->semid,LIST_TO_SEND);
+            SEM_V(semid,LIST_TO_SEND);
 
             //循环链表,并删除剩余=0 的
             alarm(1);
@@ -228,9 +239,9 @@ int pkt_send(data_t * send_pkt_p,int size){
     memcpy((char *)&(tmp_tosend_node->data),send_pkt_p,size);
 
     if(tmp_tosend_node->data.data_state == SEND_NORMAL || tmp_tosend_node->data.data_state == SEND_WEBSOCKET){
-        SEM_P_INT(shms->semid,LIST_TO_SEND);
+        SEM_P_INT(semid,LIST_TO_SEND);
         list_add_tail(&(tmp_tosend_node->list),&list_tosend_head.list);
-        SEM_V_INT(shms->semid,LIST_TO_SEND);
+        SEM_V_INT(semid,LIST_TO_SEND);
     }
 
     printf(REVERSE" a msg send ,sha1 is %s\n"NONE,tmp_tosend_node->data.sha1);
@@ -399,6 +410,11 @@ int  process_init(char *s){
     if(ret < 0){
         printf(ERROR"shm_init failed\n"NONE);
         return ret;
+    }
+
+    ret = my_sem_init("/tmp/sem2",&semid,3);
+    if(ret < 0){
+        printf(RED"my_sem_init failed 2\n"NONE);
     }
 
     //初始化锁和条件变量

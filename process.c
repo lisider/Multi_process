@@ -26,10 +26,12 @@
 #include <pthread.h>
 #include "function.h"
 #include "sha1.h"
+#include "mysem.h"
 
 
 
 process_type_t process_type = -1;
+int semid = 0;
 
 void init(void * arg){//每个进程都有的一个初始化.
     printf(TODO"specific init\n"NONE);
@@ -66,6 +68,7 @@ void waitfor(data_t * data){//websocket 独有的 接收的过程
 
 
 
+
 int main(int argc,char ** argv){
 
     int count;
@@ -95,6 +98,8 @@ int main(int argc,char ** argv){
     printf(INFO"my name is %s\n"NONE,whoami(process_type));
 
     //填充要注册的信息
+
+    process_msg.semid = semid;
     process_msg.pid = getpid();
     process_msg.process_type  = process_type;
     process_msg.msg_del_method.callback_send = call_back_SEND;
