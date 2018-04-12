@@ -74,24 +74,29 @@ void sig_handler(int arg){
     list_xxx_t *tmp_xxx_node;
     struct list_head *pos,*pos2,*n;
     int ret = 0;
-    int semid_nterprocess = 0;
+    int semid_interprocess = 0;
 
     switch(arg){
 
         case SIGINT: //退出信号
 
+
+            //-1. 杀死线程
+
+            //0.注销 进程内信号量
+            ret = semctl(semid,0,IPC_RMID);
+            if (ret == -1){
+                perror("semctl IPC_RMID");
+                printf(RED"semctl failed\n"NONE);
+            }
+            printf(YELLOW"\ndestory Semaphore Within the process\n"NONE);
+
             SEM_P(shms->semid,SHM_RES);
-            semid_nterprocess = shms->semid;
+            semid_interprocess = shms->semid;
 
             //1.注销进程信息
             for(i=0;i<ARRAY_SIZE(shms->process_register);i++){
                 if(shms->process_register[i].process_type == process_type){
-                    ret = semctl(shms->process_register[i].semid,0,IPC_RMID);
-                    if (ret == -1){
-                        perror("semctl IPC_RMID");
-                        printf(RED"semctl failed\n"NONE);
-                    }
-                    printf(YELLOW"\ndestory Semaphore Within the process\n"NONE);
                     bzero(&(shms->process_register[i]),sizeof(shms->process_register[i]));
                     printf(YELLOW"Destroy registration information\n"NONE);
 
@@ -121,7 +126,7 @@ void sig_handler(int arg){
             if(nattch == 1)
             {
                 //2.销毁sem
-                ret = semctl(semid_nterprocess,0,IPC_RMID);
+                ret = semctl(semid_interprocess,0,IPC_RMID);
                 if (ret == -1){
                     perror("semctl IPC_RMID");
                     printf(RED"semctl failed\n"NONE);
@@ -171,6 +176,12 @@ void sig_handler(int arg){
         case SIGALRM: //定时信号
             //定时删链表
             printf(GREEN "i am going to Traversing to_send list\n" NONE);
+
+            if (list_empty(&list_tosend_head.list)){
+                alarm(1);
+                break;
+            }
+
             SEM_P(semid,LIST_TO_SEND);
             list_for_each_safe(pos,n,&list_tosend_head.list){
                 tmp_xxx_node = list_entry(pos,list_xxx_t,list);//得到外层的数据
@@ -412,7 +423,7 @@ int  process_init(char *s){
         return ret;
     }
 
-    ret = my_sem_init("/tmp/sem2",&semid,3);
+    ret = my_sem_init(s,&semid,3);
     if(ret < 0){
         printf(RED"my_sem_init failed 2\n"NONE);
     }
