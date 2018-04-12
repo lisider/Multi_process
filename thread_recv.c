@@ -56,7 +56,7 @@ void * recv_thread_1(void *arg){
         tmp_xxx_node1 = (list_xxx_t *)malloc(sizeof(list_xxx_t));
         bzero((void *)&(tmp_xxx_node1->data),sizeof(data_t));                       
         memcpy((char *)&(tmp_xxx_node1->data),(char *)&(shms->data),sizeof(data_t));
-        enable_writeable(&(shms->read_write_state));
+        enable_writeable((char *)&(shms->read_write_state));
         if (sem_V(shms->semid, 0) < 0)
         {
             perror("V operate error") ;

@@ -82,7 +82,7 @@ int shm_init(void){
 
         printf(INFO"i am 1st\n"NONE);
         bzero(shms,sizeof(struct shm)); //清 0 共享内存
-        init_status(&(shms->read_write_state));
+        init_status((char *)&(shms->read_write_state));
         shms->unwriteable_times_send=0;
         //sem_init((sem_t *)&(shms->sem), 0, 1); 
         union semun arg;
