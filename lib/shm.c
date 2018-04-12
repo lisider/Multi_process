@@ -1,8 +1,8 @@
 /*************************************************************************
-    > File Name: shm.c
-    > Author: Sues
-    > Mail: sumory.kaka@foxmail.com 
-    > Created Time: Mon 02 Apr 2018 02:58:27 PM CST
+  > File Name: shm.c
+  > Author: Sues
+  > Mail: sumory.kaka@foxmail.com 
+  > Created Time: Mon 02 Apr 2018 02:58:27 PM CST
  ************************************************************************/
 
 #include <stdio.h>
@@ -16,22 +16,13 @@
 #include <strings.h>
 #include <stdlib.h>
 #include "read_write_state_api.h"
+#include "mysem.h"
 
+//这里包含了 systemV 信号量的操作,待分离
 
 extern struct shm *shms;
 extern int shmid;
 
-int sem_P(int semid, int semnum)
-{
-    struct sembuf sops={semnum,-1, SEM_UNDO};
-    return (semop(semid,&sops,1));
-}
-/***对信号量数组semnum编号的信号量做V操作***/
-int sem_V(int semid, int semnum)
-{
-    struct sembuf sops={semnum,+1, SEM_UNDO};
-    return (semop(semid,&sops,1));
-}
 
 
 int shm_init(void){
@@ -45,8 +36,9 @@ int shm_init(void){
     struct shmid_ds shmseg;
     struct shm_info shm_info;
     int tmp_shmid;
+    int i = 0;
 
-  //  int access(const char *filename, int mode);                                  
+    //  int access(const char *filename, int mode);                                  
     if(access(SHM_PATH,F_OK) != 0)                                                   
     {                                                                                
         printf("mkdir SHM_PATH\n");                                                  
@@ -93,33 +85,37 @@ int shm_init(void){
             perror("ftok key2 error") ;
             return -1 ;
         }
-        /***本程序创建了一个信号量**/
-        shms->semid = semget(key2,1,IPC_CREAT|0600);
+        /***本程序创建了4个信号量**/ //一个用于内存的互斥,另外三个分别用于3个链表的互斥
+        shms->semid = semget(key2,NUMBEROFSR,IPC_CREAT|0600);
         if (shms->semid == -1)
         {
             perror("create semget error");
             return -1;
         }
+
         arg.val = 1;
-        /***对0号信号量设置初始值***/
-        ret =semctl(shms->semid,0,SETVAL,arg);
-        if (ret < 0 )
-        {
-            perror("ctl sem error");
-            semctl(shms->semid,0,IPC_RMID,arg);
-            return -1 ;
-        }
-    }else{
-            maxid = shmctl(0, SHM_INFO, (struct shmid_ds *) (void *) &shm_info);
-            for (id = maxid; id >= 0; id--) { 
-                tmp_shmid = shmctl(id, SHM_STAT, &shmseg);
-                if(tmp_shmid == shmid)
-                {
-                    nattch = shmseg.shm_nattch;
-                    //printf("%d,%ld\t",tmp_shmid,(long) shmseg.shm_nattch);
-                    break;
-                }
+        for ( i = 0; i < NUMBEROFSR; i++ ) {
+            /***对0号信号量设置初始值***/
+            ret =semctl(shms->semid,i,SETVAL,arg);
+            if (ret < 0 )
+            {
+                perror("ctl sem error");
+                semctl(shms->semid,0,IPC_RMID,arg);
+                return -1 ;
             }
+        }
+
+    }else{
+        maxid = shmctl(0, SHM_INFO, (struct shmid_ds *) (void *) &shm_info);
+        for (id = maxid; id >= 0; id--) { 
+            tmp_shmid = shmctl(id, SHM_STAT, &shmseg);
+            if(tmp_shmid == shmid)
+            {
+                nattch = shmseg.shm_nattch;
+                //printf("%d,%ld\t",tmp_shmid,(long) shmseg.shm_nattch);
+                break;
+            }
+        }
 
         printf(INFO"i am %dth\n"NONE,nattch);
 

@@ -27,6 +27,7 @@
 #include "read_write_state_api.h"
 #include <pthread.h>
 #include "shm.h"
+#include "mysem.h"
 
 
 
@@ -45,30 +46,21 @@ void * recv_thread_1(void *arg){
         pthread_mutex_lock(&mutex);
         pthread_cond_wait(&cond1,&mutex);
 
-		//1.拿数据
-        int flag = 0;
-        flag = sem_P(shms->semid,0)  ;
-        if ( flag )
-        {
-            perror("P operate error") ;
-            return NULL ;
-        }
+        SEM_P_NULL(shms->semid,SHM_RES);
         tmp_xxx_node1 = (list_xxx_t *)malloc(sizeof(list_xxx_t));
         bzero((void *)&(tmp_xxx_node1->data),sizeof(data_t));                       
         memcpy((char *)&(tmp_xxx_node1->data),(char *)&(shms->data),sizeof(data_t));
         enable_writeable((char *)&(shms->read_write_state));
-        if (sem_V(shms->semid, 0) < 0)
-        {
-            perror("V operate error") ;
-            return NULL ;
-        }
+        SEM_V_NULL(shms->semid,SHM_RES);
 
 		//2.判断信息类型
 		switch(tmp_xxx_node1->data.data_state){
 			case SEND_NORMAL:
 			case SEND_WEBSOCKET:
 				VIEWLIST;
+                SEM_P_NULL(shms->semid,LIST_TODEL);
 				list_add_tail(&(tmp_xxx_node1->list),&list_todel_head.list);
+                SEM_V_NULL(shms->semid,LIST_TODEL);
 				printf(INFO"msg is request,"NONE ACTION" insert the msg into list_todel_head\n"NONE);
 				VIEWLIST;
 				printf("\n\n");
@@ -77,14 +69,15 @@ void * recv_thread_1(void *arg){
 
 		  case RECV_1:
 
+                SEM_P_NULL(shms->semid,LIST_TO_SEND);
 				list_for_each_safe(pos,n,&list_tosend_head.list){
 					tmp_xxx_node2 = list_entry(pos,list_xxx_t,list);//得到外层的数据
-					//if(tmp_xxx_node1->data.count == tmp_xxx_node2->data.count){//对链表中的数据进行判断,如果满足条件就删节点
 					if(tmp_xxx_node1->data.sha1[0] != 0 && !strcmp(tmp_xxx_node1->data.sha1,tmp_xxx_node2->data.sha1) && tmp_xxx_node1->data.count == tmp_xxx_node2->data.count){//对链表中的数据进行判断,如果满足条件就删节点
 						is_exist = 1;
 						break;
 					}
 				}
+
 
 				if(is_exist){
 					printf(INFO"msg is ack1,"NONE ACTION" Identity state RECV_1\n"NONE);
@@ -97,13 +90,14 @@ void * recv_thread_1(void *arg){
 					//调用回调,说不存在
 					//已经不用调用回调了,因为链表已经不存在了,标识着已经做过回调了
 				}
+                SEM_V_NULL(shms->semid,LIST_TO_SEND);
 
 				break;
 
 		  case RECV_2:
+                SEM_P_NULL(shms->semid,LIST_TO_SEND);
 				list_for_each_safe(pos,n,&list_tosend_head.list){
 					tmp_xxx_node2 = list_entry(pos,list_xxx_t,list);//得到外层的数据
-					//if(tmp_xxx_node1->data.count == tmp_xxx_node2->data.count){//对链表中的数据进行判断,如果满足条件就删节点
 					if(tmp_xxx_node1->data.sha1[0] != 0 &&  !strcmp(tmp_xxx_node1->data.sha1,tmp_xxx_node2->data.sha1) && tmp_xxx_node1->data.count == tmp_xxx_node2->data.count){//对链表中的数据进行判断,如果满足条件就删节点
 						is_exist = 1;
 						break;
@@ -126,6 +120,7 @@ void * recv_thread_1(void *arg){
 					//调用回调,说不存在
 					//已经不用调用回调了,因为链表已经不存在了,标识着已经做过回调了
 				}
+                SEM_V_NULL(shms->semid,LIST_TO_SEND);
 
 				break;
 
@@ -155,18 +150,14 @@ void * recv_thread_2(void *arg){
         pthread_cond_wait(&cond2,&mutex);
 
 		//得到数据
+        SEM_P_NULL(shms->semid,LIST_TODEL);
 		list_for_each_safe(pos,n,&list_todel_head.list){  		
 			tmp_xxx_node1 = list_entry(pos,list_xxx_t,list);//得到外层的数据
 
 			if(process_type == WEBSOCKET){//注意,需要考虑,这里面是处理一个数据还是处理链表中所有的数据
 
 					//得到函数
-					flag = sem_P(shms->semid,0);
-					if ( flag )
-					{
-						perror("P operate error") ;
-						return NULL ;
-					}
+        SEM_P_NULL(shms->semid,SHM_RES);
 
 
 					for(i=0;i<ARRAY_SIZE(shms->process_register);i++){
@@ -177,11 +168,7 @@ void * recv_thread_2(void *arg){
 						}
 					}
 
-					if (sem_V(shms->semid, 0) < 0)
-					{
-						perror("V operate error") ;
-						return NULL ;
-					}
+        SEM_V_NULL(shms->semid,SHM_RES);
 
 					if (todel)
 						todel(&list_todel_head);//这里面要处理给服务器发包 ,给进程发包,给进程的发包的时候需要置位 RECV_1;
@@ -207,6 +194,7 @@ void * recv_thread_2(void *arg){
 
 			}
 		}
+        SEM_V_NULL(shms->semid,LIST_TODEL);
 		pthread_mutex_unlock(&mutex);
 	}
 	return NULL;
@@ -231,23 +219,14 @@ void * recv_thread_3(void *arg){
 	if(process_type == WEBSOCKET){  //websocket 进程的处理函数
 
 		//得到函数
-		flag = sem_P(shms->semid,0)  ;
-		if ( flag )
-		{
-			perror("P operate error") ;
-			return NULL ;
-		}
+        SEM_P_NULL(shms->semid,SHM_RES);
 		for(i=0;i<ARRAY_SIZE(shms->process_register);i++){
 			if(shms->process_register[i].process_type == process_type && shms->process_register[i].pid != 0){
 				waitfor = shms->process_register[i].msg_del_method.waitfor;
 				break;
 			}
 		}
-		if (sem_V(shms->semid, 0) < 0)
-		{
-			perror("V operate error");
-			return NULL ;
-		}
+        SEM_V_NULL(shms->semid,SHM_RES);
 
 		while(1){
 
@@ -261,6 +240,8 @@ void * recv_thread_3(void *arg){
 				printf("error happed\n");
 			}
 
+            SEM_P_NULL(shms->semid,LIST_DELED);
+
 			list_for_each_safe(pos,n,&list_deled_head.list){  		
 				tmp_xxx_node = list_entry(pos,list_xxx_t,list);//得到外层的数据
 				if(1){//对链表中的数据进行判断,如果满足条件就删节点
@@ -271,6 +252,7 @@ void * recv_thread_3(void *arg){
 					printf("\n\n");
 				}
 			}
+            SEM_V_NULL(shms->semid,LIST_DELED);
 		}
 	}
 
@@ -279,6 +261,7 @@ void * recv_thread_3(void *arg){
 		pthread_mutex_lock(&mutex);
 		pthread_cond_wait(&cond3,&mutex);
 
+        SEM_P_NULL(shms->semid,LIST_DELED);
 		list_for_each_safe(pos,n,&list_deled_head.list){  		
 			tmp_xxx_node1 = list_entry(pos,list_xxx_t,list);//得到外层的数据
 			//printf("one delte in list_deled_head \n");
@@ -312,6 +295,7 @@ void * recv_thread_3(void *arg){
 			}
 
 		}
+        SEM_V_NULL(shms->semid,LIST_DELED);
 	}
 	return NULL;
 }

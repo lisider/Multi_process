@@ -78,6 +78,13 @@ int main(int argc,char ** argv){
 
     int ret = 0;
 
+    if (argc == 1){
+
+        printf(RED"use the sample like\n./main 1\n"NONE);
+        return -1;
+
+    }
+
     ret = process_init(NULL);
     if(ret < 0){
         printf(ERROR"process_init failed\n"NONE);

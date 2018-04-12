@@ -26,6 +26,7 @@
 #include "shm.h"
 #include <pthread.h>
 #include "read_write_state_api.h"
+#include "mysem.h"
 
 
 char process_names[64][32]={
@@ -70,37 +71,27 @@ void sig_handler(int arg){
     struct shmid_ds shmseg;
     struct shm_info shm_info;
     int i;
-    int flag = 0;
     list_xxx_t *tmp_xxx_node;
     struct list_head *pos,*pos2,*n;
+    int ret;
+    int semid;
 
     switch(arg){
 
         case SIGINT: //退出信号
 
-            //printf("going to exit\n");
-
-            //注销信息
-            flag = sem_P(shms->semid,0)  ;
-            if ( flag )
-            {
-                perror("P operate error") ;
-                return ;
-            }
+            SEM_P(shms->semid,SHM_RES);
+            semid = shms->semid;
+            //1.注销进程信息
             for(i=0;i<ARRAY_SIZE(shms->process_register);i++){
                 if(shms->process_register[i].process_type == process_type)
                     bzero(&(shms->process_register[i]),sizeof(shms->process_register[i]));
             }
-            if (sem_V(shms->semid, 0) < 0)
-            {
-                perror("V operate error") ;
-                return ;
-            }
+            SEM_V(shms->semid,SHM_RES);
 
 
 
-            // 3. 取消共享内存的映射
-            // 判断自己是不是最后一个进程,如果是,则删除共享内存
+            // 3.取消共享内存的映射,判断自己是不是最后一个进程,如果是,则删除共享内存
 
             maxid = shmctl(0, SHM_INFO, (struct shmid_ds *) (void *) &shm_info);
             for (id = maxid; id >= 0; id--) { 
@@ -113,20 +104,28 @@ void sig_handler(int arg){
                 }
             }
 
+            shmdt(shms);
+            printf(YELLOW"\nCanceling mappings to the shm memory\n"NONE);
+
             if(nattch == 1)
             {
-                printf(YELLOW"del the shm memory\n"NONE);
-                shmdt(shms);
+                //2.销毁sem
+                ret = semctl(semid,0,IPC_RMID);
+                if (ret == -1){
+                    perror("semctl IPC_RMID");
+                    printf(RED"semctl failed\n"NONE);
+                }
+                printf(YELLOW"destory Semaphore becaseof i am the last process\n"NONE);
+
                 shmctl(shmid, IPC_RMID, NULL);
-            }else{
-                printf(YELLOW"not del the shm memory\n"NONE);
-                shmdt(shms);
+                printf(YELLOW"Destroy shared memory becaseof i am the last process\n"NONE);
             }
 
 
             //反注册
             //链表清空
 
+            //此时信号量已经被销毁,所以不用互斥了
 
             list_for_each_safe(pos,n,&list_tosend_head.list){  		
                 tmp_xxx_node = list_entry(pos,list_xxx_t,list);//得到外层的数据
@@ -146,6 +145,7 @@ void sig_handler(int arg){
                 free(tmp_xxx_node);//释放数据
             }
 
+            printf(YELLOW"Empty chain list\n"NONE);
 
 
             exit(0);
@@ -157,9 +157,10 @@ void sig_handler(int arg){
             pthread_cond_signal(&cond1);
             break;
 
-        case SIGALRM: //退出信号
+        case SIGALRM: //定时信号
             //定时删链表
             printf(GREEN "i am going to Traversing to_send list\n" NONE);
+            SEM_P(shms->semid,LIST_TO_SEND);
             list_for_each_safe(pos,n,&list_tosend_head.list){
                 tmp_xxx_node = list_entry(pos,list_xxx_t,list);//得到外层的数据
                 printf(GREEN "del with one subtraction ,count : %d, left dead_line :%d\n" NONE,tmp_xxx_node->data.count,tmp_xxx_node->data.deadline-1);
@@ -169,6 +170,7 @@ void sig_handler(int arg){
                     printf(YELLOW"remove node from list_xxx_head because of dead_line, count is %d\n"NONE,tmp_xxx_node->data.count);
                 }
             }
+            SEM_V(shms->semid,LIST_TO_SEND);
 
             //循环链表,并删除剩余=0 的
             alarm(1);
@@ -180,33 +182,6 @@ void sig_handler(int arg){
     return ;
 }
 
-/** data_state_t find_sendstate_by_pidto(int pid_to){//TODO */
-/**  */
-/**     int i = 0; */
-/**     int flag = 0; */
-/**     int pid = -1; */
-/**     char is_websocket = 0; */
-/**  */
-/**  */
-/**     flag = sem_P(shms->semid,0)  ; */
-/**     if ( flag ) */
-/**     { */
-/**         perror("P operate error") ; */
-/**         return -1 ; */
-/**     } */
-/**  */
-/**     if(shms->process_register[process_type].pid == pid_to) */
-/**         if(shms->process_register[process_type].process_type == WEBSOCKET) */
-/**             is_websocket = 1; */
-/**  */
-/**     if (sem_V(shms->semid, 0) < 0) */
-/**     { */
-/**         perror("V operate error") ; */
-/**         return -1 ; */
-/**     } */
-/**  */
-/**     return is_websocket ? SEND_WEBSOCKET:SEND_NORMAL; */
-/** } */
 
 int pkt_send(data_t * send_pkt_p,int size){
 
@@ -222,13 +197,7 @@ int pkt_send(data_t * send_pkt_p,int size){
 
     //处理同步问题
     //同步 1 信号量
-    int flag = 0;
-    flag = sem_P(shms->semid,0)  ;
-    if ( flag )
-    {
-        perror("P operate error") ;
-        return -1 ;
-    }
+    SEM_P_INT(shms->semid,SHM_RES);
 
     //同步 2 读写标识
     while(!is_writeable(shms->read_write_state)){
@@ -238,11 +207,7 @@ int pkt_send(data_t * send_pkt_p,int size){
         {
             shms->unwriteable_times_send = 0;
 
-            if (sem_V(shms->semid, 0) < 0)
-            {
-                perror("V operate error") ;
-                return -1 ;
-            }
+            SEM_V_INT(shms->semid,SHM_RES);
             printf(RED"unwriteable_times_send = 5 .force to 0.sws : %s,%s,line = %d\n",__FILE__,__func__,__LINE__);
             break;
         }
@@ -253,12 +218,7 @@ int pkt_send(data_t * send_pkt_p,int size){
             return -1 ;
         }
         usleep(1000);
-        flag = sem_P(shms->semid,0)  ;
-        if ( flag )
-        {
-            perror("P operate error") ;
-            return -1 ;
-        }
+        SEM_P_INT(shms->semid,SHM_RES);
 
     }
 
@@ -267,8 +227,11 @@ int pkt_send(data_t * send_pkt_p,int size){
     bzero((void *)&(tmp_tosend_node->data),sizeof(data_t));                       
     memcpy((char *)&(tmp_tosend_node->data),send_pkt_p,size);
 
-    if(tmp_tosend_node->data.data_state == SEND_NORMAL || tmp_tosend_node->data.data_state == SEND_WEBSOCKET)
+    if(tmp_tosend_node->data.data_state == SEND_NORMAL || tmp_tosend_node->data.data_state == SEND_WEBSOCKET){
+        SEM_P_INT(shms->semid,LIST_TO_SEND);
         list_add_tail(&(tmp_tosend_node->list),&list_tosend_head.list);
+        SEM_V_INT(shms->semid,LIST_TO_SEND);
+    }
 
     printf(REVERSE" a msg send ,sha1 is %s\n"NONE,tmp_tosend_node->data.sha1);
     printf(ACTION"send msg from %d to %d\n"NONE,tmp_tosend_node->data.pid_from,tmp_tosend_node->data.pid_to);
@@ -285,11 +248,7 @@ int pkt_send(data_t * send_pkt_p,int size){
     //处理同步问题
     disable_writeable((char *)&(shms->read_write_state));
     shms->unwriteable_times_send = 0;
-    if (sem_V(shms->semid, 0) < 0)
-    {
-        perror("V operate error") ;
-        return -1 ;
-    }
+    SEM_V_INT(shms->semid,SHM_RES);
 
     if(tmp_tosend_node->data.data_state == RECV_1 || tmp_tosend_node->data.data_state == RECV_2)
         free(tmp_tosend_node);
@@ -305,12 +264,7 @@ int is_existed(process_type_t process_type){
     int flag = 0;
 
 
-    flag = sem_P(shms->semid,0)  ;
-    if ( flag )
-    {
-        perror("P operate error") ;
-        return -1 ;
-    }
+    SEM_P_INT(shms->semid,SHM_RES);
 
     for(i=0;i<ARRAY_SIZE(shms->process_register);i++){
         if(shms->process_register[i].process_type == process_type)
@@ -330,12 +284,7 @@ int is_existed(process_type_t process_type){
     }
     else
     {
-        if (sem_V(shms->semid, 0) < 0)
-        {
-            perror("V operate error") ;
-            return -1 ;
-        }
-
+        SEM_V_INT(shms->semid,SHM_RES);
         return 1;
 
     }
@@ -346,15 +295,9 @@ int traverse_process(void){
     int i = 0;
     int j = 0;
 
-    int flag = 0;
 
 
-    flag = sem_P(shms->semid,0)  ;
-    if ( flag )
-    {
-        perror("P operate error") ;
-        return -1 ;
-    }
+    SEM_P_INT(shms->semid,SHM_RES);
     //sem_wait((sem_t *)&(shms->sem));
     for(i=0;i<ARRAY_SIZE(shms->process_register);i++){
         if(shms->process_register[i].pid != 0){
@@ -368,12 +311,8 @@ int traverse_process(void){
     }
     printf("\n"NONE);
 
+    SEM_V_INT(shms->semid,SHM_RES);
 
-    if (sem_V(shms->semid, 0) < 0)
-    {
-        perror("V operate error") ;
-        return -1 ;
-    }
     return 0;
 }
 
@@ -381,15 +320,7 @@ int traverse_process(void){
 
 int register_process(process_msg_t *p){
     int i=0;
-    int flag = 0;
-
-
-    flag = sem_P(shms->semid,0)  ;
-    if ( flag )
-    {
-        perror("P operate error") ;
-        return -1;
-    }
+    SEM_P_INT(shms->semid,SHM_RES);
 
     for(i=0;i<ARRAY_SIZE(shms->process_register);i++){
         if (shms->process_register[i].process_type == p->process_type)
@@ -415,11 +346,7 @@ int register_process(process_msg_t *p){
     //这里面加一个注册函数的初始化
     shms->process_register[i].msg_del_method.init(NULL);
 
-    if (sem_V(shms->semid, 0) < 0)
-    {
-        perror("V operate error") ;
-        return -1;
-    }
+    SEM_V_INT(shms->semid,SHM_RES);
 
     return 0;
 }
@@ -429,18 +356,12 @@ int register_process(process_msg_t *p){
 int findpidbyname(process_type_t process_type){
 
     int i = 0;
-    int flag = 0;
     int pid = -1;
 
     if (process_type >=ARRAY_SIZE(shms->process_register))
         return -2;
 
-    flag = sem_P(shms->semid,0)  ;
-    if ( flag )
-    {
-        perror("P operate error") ;
-        return -1 ;
-    }
+    SEM_P_INT(shms->semid,SHM_RES);
 
 
     for(i=0;i<ARRAY_SIZE(shms->process_register);i++){
@@ -455,12 +376,7 @@ int findpidbyname(process_type_t process_type){
     /**     pid = shms->process_register[process_type].pid; */
 
 
-    if (sem_V(shms->semid, 0) < 0)
-    {
-        perror("V operate error") ;
-        return -1 ;
-    }
-
+    SEM_V_INT(shms->semid,SHM_RES);
     return pid;
 }
 
