@@ -81,9 +81,9 @@ int main(int argc,char ** argv){
 
     int ret = 0;
 
-    if (argc == 2){
+    if (argc != 3){
 
-        printf(RED"use the sample like\n./main 1\n"NONE);
+        printf(RED"use the sample like\n./run.sh 1\n"NONE);
         return -1;
 
     }
