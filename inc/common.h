@@ -123,6 +123,7 @@ list_xxx_t list_deled_head;
 struct shm *shms;
 int shmid;
 
+
 pthread_cond_t  cond1,cond2,cond3;
 pthread_mutex_t mutex;
 pthread_t       pthid1;
@@ -132,6 +133,7 @@ extern int semid;
 
 #define VIEWLIST \
     do{\
+        list_xxx_t *tmp_xxx_node;\
         i = 0;j = 0; k = 0;\
         list_for_each_entry(tmp_xxx_node,&list_tosend_head.list,list)\
         i++;\

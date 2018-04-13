@@ -319,7 +319,6 @@ void * recv_thread_3(void *arg){
             }
 
 
-            VIEWLIST;
             if (!list_empty(&list_deled_head.list)){
 
                 SEM_P_NULL(semid,LIST_DELED);
@@ -327,8 +326,10 @@ void * recv_thread_3(void *arg){
                 list_for_each_safe(pos,n,&list_deled_head.list){  		
                     tmp_xxx_node = list_entry(pos,list_xxx_t,list);//得到外层的数据
                     if(1){//对链表中的数据进行判断,如果满足条件就删节点
+                        VIEWLIST;
                         list_del(pos); // 注意,删除链表,是删除的list_head,还需要删除 外层的数据 ,删除一个节点之后,并没有破坏这个节点和外围数据的位置关系
                         free(tmp_xxx_node);//释放数据
+                        VIEWLIST;
                         printf("\n\n");
                     }
                 }
