@@ -123,6 +123,8 @@ void * recv_thread_1(void *arg){
                     //已经不用调用回调了,因为链表已经不存在了,标识着已经做过回调了
                 }
                 SEM_V_NULL(semid,LIST_TO_SEND);
+                free(tmp_xxx_node1);
+
 
                 break;
 
@@ -154,6 +156,7 @@ void * recv_thread_1(void *arg){
                         printf("\n\n");
 
                         SEM_V_NULL(semid,LIST_TO_SEND);
+                        free(tmp_xxx_node1);
 #endif
 
                         break;
