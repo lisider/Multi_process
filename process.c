@@ -56,7 +56,7 @@ void call_back_PASSIVE(int count,char state){
 }    
 
 
-int todel(list_xxx_t* list_todel_head){//websocket 独有的 发送消息的过程
+int todel(data_t * data){//websocket 独有的 发送消息的过程
 
     printf(TODO"todel fuction\n"NONE);     
     //printf("sws : %s,%s,line = %d\n",__FILE__,__func__,__LINE__);
@@ -208,7 +208,7 @@ int main(int argc,char ** argv){
 
         while(1);
         for(i = 0;i<30000;i++)
-            for(j = 0; j < 10000;j++);
+            for(j = 0; j < 20000;j++);
     }
 
     return 0;

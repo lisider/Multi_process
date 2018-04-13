@@ -79,7 +79,7 @@ void * recv_thread_1(void *arg){
 
         //2.判断信息类型
         switch(tmp_xxx_node1->data.data_state){
-            case SEND_NORMAL:
+            case SEND_NORMAL://full through
             case SEND_WEBSOCKET:
                 VIEWLIST;
                 SEM_P_NULL(semid,LIST_TODEL);
@@ -207,7 +207,7 @@ void * recv_thread_2(void *arg){
     list_xxx_t *tmp_xxx_node;
     int i , j , k;
     int ret;
-    int (*todel)(list_xxx_t* list_todel_head) = NULL;
+    int (*todel)(data_t * data) = NULL;
     int pid_tmp;
 
     SEM_P_NULL(shms->semid,SHM_RES);
@@ -236,7 +236,7 @@ void * recv_thread_2(void *arg){
 
                 //得到函数
                 if (todel)
-                    ret = todel(NULL);//这里面要处理给服务器发包 ,给进程发包,给进程的发包的时候需要置位 RECV_1;
+                    ret = todel(&(tmp_xxx_node1->data));//这里面要处理给服务器发包 ,给进程发包,给进程的发包的时候需要置位 RECV_1;
                 else
                     printf(ERROR"error happend 23\n"NONE);
                 tmp_xxx_node1->data.ack_state = ret;

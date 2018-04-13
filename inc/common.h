@@ -73,7 +73,7 @@ typedef struct{
     call_back_fun_t callback_ack; // 每个进程都有的,表示一次,通话结束
     call_back_fun_t callback_passive; //针对websocket 特有的
     init_t  init;
-    int (*todel)(list_xxx_t* list_todel_head);
+    int (*todel)(data_t *data);
     int (*waitfor)(data_t *data);
 }msg_del_method_t;
 
