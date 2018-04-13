@@ -49,6 +49,7 @@ typedef struct {
     data_state_t data_state;
     int deadline;
     char sha1[40];
+    int ack_state;
 }data_t;
 
 typedef struct  _list_xxx_t{

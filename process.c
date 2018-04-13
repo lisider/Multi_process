@@ -60,14 +60,29 @@ int todel(list_xxx_t* list_todel_head){//websocket 独有的 发送消息的过�
 
     printf(TODO"todel fuction\n"NONE);     
     //printf("sws : %s,%s,line = %d\n",__FILE__,__func__,__LINE__);
-    return -1;
+    return -20;
 }
 
 int waitfor(data_t * data){//websocket 独有的 接收的过程
     int i;
-    for(i = 0; i < 2000;i++){
-        usleep(1000);
-    }
+    //for(i = 0; i < 2000;i++){
+    //  usleep(1000);
+    // }
+    //
+#if 1
+    bzero(data,sizeof(data_t));
+
+    strcpy(data->context,"hello ,i am form server, i am ack");
+    strcpy(data->msg,"Extra string information");
+    data->count = 20;
+    data->deadline = 60;
+    strcpy(data->sha1,"iamsha1");
+    data->data_state  = -4;
+    printf(TODO"waitfor fuction\n"NONE);     
+
+
+    return 1;
+#endif
     printf(TODO"waitfor fuction\n"NONE);     
     return -1;
 }
@@ -77,7 +92,7 @@ int waitfor(data_t * data){//websocket 独有的 接收的过程
 
 int main(int argc,char ** argv){
 
-    int count;
+    int count = 0;
     int i ,j ;
     //要发送的数据
     data_t data;
@@ -191,6 +206,7 @@ int main(int argc,char ** argv){
             printf("error happed\n");
         }
 
+        while(1);
         for(i = 0;i<30000;i++)
             for(j = 0; j < 10000;j++);
     }
