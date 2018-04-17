@@ -149,7 +149,7 @@ int main(int argc,char ** argv){
 
 
 
-    alarm(1);
+    timer_init();
 
     if (process_type  == WEBSOCKET){
         while(1);

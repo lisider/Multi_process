@@ -27,6 +27,7 @@
 #include <pthread.h>
 #include "read_write_state_api.h"
 #include "mysem.h"
+#include <time.h>
 
 
 char process_names[64][32]={
@@ -53,6 +54,31 @@ char * whoami(process_type_t process_type){
 /***对信号量数组semnum编号的信号量做P操作***/
 
 
+void timer_handle(union sigval v)
+{
+    list_xxx_t *tmp_xxx_node;
+    struct list_head *pos,*pos2,*n;
+
+    printf(GREEN "i am going to Traversing to_send list\n" NONE);
+
+    if (list_empty(&list_tosend_head.list)){
+        return ;
+    }
+
+    SEM_P(semid,LIST_TO_SEND);
+    list_for_each_safe(pos,n,&list_tosend_head.list){
+        tmp_xxx_node = list_entry(pos,list_xxx_t,list);//得到外层的数据
+        printf(GREEN "del with one subtraction ,count : %d, left dead_line :%d\n" NONE,tmp_xxx_node->data.count,tmp_xxx_node->data.deadline-1);
+        if(--tmp_xxx_node->data.deadline == 0){//对链表中的数据进行判断,如果满足条件就删节点
+            list_del(pos); // 注意,删除链表,是删除的list_head,还需要删除 外层的数据 ,删除一个节点之后,并没有破坏这个节点和外围数据的位置关系
+            free(tmp_xxx_node);//释放数据
+            printf(YELLOW"remove node from list_xxx_head because of dead_line, count is %d\n"NONE,tmp_xxx_node->data.count);
+        }
+    }
+    SEM_V(semid,LIST_TO_SEND);
+
+    return;
+}
 
 
 
@@ -171,31 +197,6 @@ void sig_handler(int arg){
         case SIGUSR1: 
             printf(REVERSE "a msg receive\n"NONE);
             pthread_cond_signal(&cond1);
-            break;
-
-        case SIGALRM: //定时信号
-            //定时删链表
-            printf(GREEN "i am going to Traversing to_send list\n" NONE);
-
-            if (list_empty(&list_tosend_head.list)){
-                alarm(1);
-                break;
-            }
-
-            SEM_P(semid,LIST_TO_SEND);
-            list_for_each_safe(pos,n,&list_tosend_head.list){
-                tmp_xxx_node = list_entry(pos,list_xxx_t,list);//得到外层的数据
-                printf(GREEN "del with one subtraction ,count : %d, left dead_line :%d\n" NONE,tmp_xxx_node->data.count,tmp_xxx_node->data.deadline-1);
-                if(--tmp_xxx_node->data.deadline == 0){//对链表中的数据进行判断,如果满足条件就删节点
-                    list_del(pos); // 注意,删除链表,是删除的list_head,还需要删除 外层的数据 ,删除一个节点之后,并没有破坏这个节点和外围数据的位置关系
-                    free(tmp_xxx_node);//释放数据
-                    printf(YELLOW"remove node from list_xxx_head because of dead_line, count is %d\n"NONE,tmp_xxx_node->data.count);
-                }
-            }
-            SEM_V(semid,LIST_TO_SEND);
-
-            //循环链表,并删除剩余=0 的
-            alarm(1);
             break;
 
         default:
@@ -409,7 +410,6 @@ int  process_init(char *s){
     //注册信号
     signal(SIGINT, sig_handler);
     signal(SIGUSR1, sig_handler);
-    signal(SIGALRM, sig_handler);
 
     //初始化链表
     INIT_LIST_HEAD(&list_tosend_head.list);  
@@ -463,4 +463,38 @@ int  process_init(char *s){
     }
 
     return 1;
+}
+
+
+int timer_init(void){
+
+    struct sigevent evp;
+    struct itimerspec ts;
+    timer_t timer;
+    int ret;
+
+    memset (&evp, 0, sizeof(evp));
+    evp.sigev_value.sival_ptr = &timer; //句柄
+    evp.sigev_notify = SIGEV_THREAD; //设置通知方式,通知方式可以有不通知,用信号通知,用 invoking sigev_notify_function 通知
+    evp.sigev_notify_function = timer_handle; //设置处理函数
+    evp.sigev_value.sival_int = 3;  //作为handle()的参数
+
+    ret = timer_create(CLOCK_REALTIME, &evp, &timer);
+    if( ret){
+        perror("timer_create");
+        exit(-1);
+    }
+
+    ts.it_interval.tv_sec = 1; // 第一次触发后的 时间间隔 秒
+    ts.it_interval.tv_nsec = 0; // 时间间隔 纳秒
+    ts.it_value.tv_sec = 1; //第一次触发时间 秒
+    ts.it_value.tv_nsec = 0;  //第一次触发事件 纳秒
+
+    ret = timer_settime(timer, /*TIMER_ABSTIME*/0, &ts, NULL);
+    if( ret ){
+        perror("timer_settime");
+        exit(-1);
+    }
+
+    return 0;
 }

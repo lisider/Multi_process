@@ -9,4 +9,5 @@ void  sig_handler(int arg);
 int    traverse_process(void);
 char *whoami(process_type_t process_type);
 int  process_init(char *s);
+int timer_init(void);
 #endif
