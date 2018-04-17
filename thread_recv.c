@@ -29,7 +29,7 @@
 #include "shm.h"
 #include "mysem.h"
 
-extern int semid;
+int semid = 0;
 
 int my_pid_to = 0;
 int my_pid_from = 0;

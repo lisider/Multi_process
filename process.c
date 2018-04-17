@@ -31,7 +31,6 @@
 
 
 process_type_t process_type = -1;
-int semid = 0;
 
 void init(void * arg){//每个进程都有的一个初始化.
     printf(TODO"specific init\n"NONE);
