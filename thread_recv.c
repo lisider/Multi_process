@@ -58,7 +58,7 @@ void * recv_thread_1(void *arg){
             //memcpy((char *)&(shms->process_register[i]),p,sizeof(shms->process_register[i]));
             call_back_SEND = shms->process_register[i].msg_del_method.callback_send;
             call_back_ACK = shms->process_register[i].msg_del_method.callback_ack;
-            call_back_ACK = shms->process_register[i].msg_del_method.callback_passive;
+            call_back_PASSIVE = shms->process_register[i].msg_del_method.callback_passive;
             break;
         }
     }
